@@ -54,3 +54,10 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+/* git status
+git add .
+git commit -m "Describe your changes"
+git pull origin main --rebase
+git push origin main
+*/
