@@ -1,6 +1,7 @@
 // flutter_app/lib/providers/auth_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../services/firebase_service.dart';
 import '../models/user_model.dart';
 
@@ -197,19 +198,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Sign out
-  Future<void> signOut() async {
+  // Returns true on successful sign out, false on failure
+  Future<bool> signOut() async {
     state = state.copyWith(isLoading: true);
 
     try {
       await _firebaseAuth.signOut();
       state = AuthState(); // Reset to initial state
+      return true;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to sign out.',
       );
+      return false;
     }
   }
+
 
   // Reset password
   Future<void> resetPassword(String email) async {

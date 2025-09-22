@@ -2,6 +2,7 @@
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:kredai/providers/application_provider.dart';
 import '../services/api_service.dart';
 import '../models/prediction_result_model.dart';

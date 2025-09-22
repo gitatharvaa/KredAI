@@ -1,5 +1,6 @@
 // flutter_app/lib/providers/application_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../services/api_service.dart';
 import '../models/application_model.dart';
 import '../models/prediction_result_model.dart';

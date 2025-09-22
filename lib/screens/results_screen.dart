@@ -1,11 +1,11 @@
 // flutter_app/lib/screens/results_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kredai/screens/dashboard_screen.dart';
 import '../providers/application_provider.dart';
 import '../widgets/risk_gauge_widget.dart';
 import '../widgets/shap_chart_widget.dart';
 import '../utils/constants.dart';
-import 'home_screen.dart';
 
 class ResultsScreen extends ConsumerStatefulWidget {
   const ResultsScreen({super.key});
@@ -55,7 +55,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ref.read(applicationProvider.notifier).clearState();
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              MaterialPageRoute(builder: (context) => const DashboardScreen()),
               (route) => false,
             );
           },
@@ -166,7 +166,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       ref.read(applicationProvider.notifier).clearState();
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => const HomeScreen()),
+                        MaterialPageRoute(builder: (context) => const DashboardScreen()),
                         (route) => false,
                       );
                     },
