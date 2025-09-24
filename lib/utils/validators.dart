@@ -1,4 +1,4 @@
-// flutter_app/lib/utils/validators.dart
+// lib/utils/validators.dart
 class Validators {
   static String? validateIncome(String? value) {
     if (value == null || value.isEmpty) {
@@ -9,7 +9,7 @@ class Validators {
       return 'Please enter a valid number';
     }
     if (income < 1000) {
-      return 'Income must be at least \$1,000';
+      return 'Income must be at least ₹1,000';
     }
     return null;
   }
@@ -53,8 +53,8 @@ class Validators {
     if (amount <= 0) {
       return 'Loan amount must be greater than 0';
     }
-    if (amount > 1000000) {
-      return 'Loan amount cannot exceed \$1,000,000';
+    if (amount > 8000000) {
+      return 'Loan amount cannot exceed ₹8,000,000';
     }
     return null;
   }

@@ -1,8 +1,9 @@
-// flutter_app/lib/main.dart
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/auth_screen.dart';
 import 'providers/auth_provider.dart';
@@ -10,10 +11,22 @@ import 'utils/constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize EasyLocalization before Firebase so translations are ready early.
+  await EasyLocalization.ensureInitialized();
+
   await Firebase.initializeApp();
+
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    EasyLocalization(
+      supportedLocales: const [
+        Locale('en'),
+        Locale('hi'),
+        // add more locales as you add translation jsons: Locale('bn'), Locale('ta'), Locale('te'), Locale('mr')
+      ],
+      path: 'assets/translations', // folder with translation jsons
+      fallbackLocale: const Locale('en'),
+      child: const ProviderScope(child: MyApp()),
     ),
   );
 }
@@ -31,6 +44,10 @@ class MyApp extends ConsumerWidget {
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
       themeMode: ThemeMode.light,
+      // localization wiring
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
       home: _buildHome(authState),
     );
   }
@@ -140,12 +157,10 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-
-/* 
-Atharve here
+/*
 git status
 git add .
-git commit -m "Describe your changes"
+git commit -m "Your meaningful commit message"
 git pull origin main --rebase
 git push origin main
-*/
+ */

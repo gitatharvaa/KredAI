@@ -1,7 +1,7 @@
 // flutter_app/lib/utils/constants.dart
 class AppConstants {
   // API Configuration
-  static const String baseUrl = 'http://192.168.0.103:8000';
+  static const String baseUrl = 'http://10.158.78.236:8000';
   // Change for production
   static const String apiVersion = 'v1';
   

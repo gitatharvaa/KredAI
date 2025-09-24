@@ -71,6 +71,9 @@ dependencies:
   flutter_card_swiper: ^7.0.2
   flutter_staggered_animations: ^1.0.0
 
+  easy_localization: ^3.0.8
+  speech_to_text: ^7.3.0
+
 
 dev_dependencies:
   flutter_test:
@@ -101,6 +104,8 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/animations/
+    - assets/translations/en.json
+    - assets/translations/hi.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
