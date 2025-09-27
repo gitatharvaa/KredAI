@@ -1,11 +1,11 @@
 // flutter_app/lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'application_form_screen.dart';
-import 'dashboard_screen.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../utils/constants.dart';
-import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
+import 'user_profile_form_screen.dart';
+import 'dashboard_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -14,378 +14,440 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  bool _isHealthy = false;
-  bool _isChecking = true;
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _checkBackendHealth();
+    _animationController = AnimationController(
+      duration: AppConstants.longAnimationDuration,
+      vsync: this,
+    );
+    
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _animationController.forward();
   }
 
-  Future<void> _checkBackendHealth() async {
-    final apiService = ApiService();
-    final isHealthy = await apiService.checkHealth();
-    setState(() {
-      _isHealthy = isHealthy;
-      _isChecking = false;
-    });
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-
-    // Responsive helpers
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
-    final padding = width * 0.05; // responsive padding ~5% of width
-    final spacing = height * 0.02; // responsive vertical spacing
-    final buttonHeight = height * 0.07; // responsive button height
+    final isSmallScreen = width < 600;
+    final padding = width * 0.06;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppConstants.appName),
-        centerTitle: true,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'dashboard':
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                  );
-                  break;
-                case 'logout':
-                  _showLogoutDialog();
-                  break;
-              }
-            },
-            itemBuilder: (BuildContext context) => [
-              PopupMenuItem<String>(
-                value: 'dashboard',
-                child: ListTile(
-                  leading: const Icon(Icons.dashboard),
-                  title: const Text('Dashboard'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem<String>(
-                value: 'logout',
-                child: ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text('Logout', style: TextStyle(color: Colors.red)),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Text(
-                  authState.user?.displayName?.substring(0, 1).toUpperCase() ??
-                  authState.user?.email?.substring(0, 1).toUpperCase() ?? 'U',
-                  style: TextStyle(
-                    color: const Color(AppConstants.primaryColorValue),
-                    fontWeight: FontWeight.bold,
-                  ),
+      backgroundColor: const Color(AppConstants.backgroundColorValue),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Container(
+            height: height,
+            padding: EdgeInsets.symmetric(
+              horizontal: padding,
+              vertical: isSmallScreen ? 20 : 40,
+            ),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(height: isSmallScreen ? height * 0.05 : height * 0.08),
+                    
+                    // App Logo and Title
+                    _buildHeader(width, isSmallScreen),
+                    
+                    SizedBox(height: isSmallScreen ? height * 0.06 : height * 0.08),
+                    
+                    // Feature Cards
+                    _buildFeatureCards(width, isSmallScreen),
+                    
+                    SizedBox(height: isSmallScreen ? height * 0.08 : height * 0.10),
+                    
+                    // Action Buttons
+                    _buildActionButtons(context, authState, width, isSmallScreen),
+                    
+                    SizedBox(height: height * 0.05),
+                    
+                    // Footer Information
+                    _buildFooter(width, isSmallScreen),
+                  ],
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(AppConstants.primaryColorValue).withOpacity(0.1),
-              Colors.white,
+    );
+  }
+
+  Widget _buildHeader(double width, bool isSmallScreen) {
+    return AnimationConfiguration.staggeredList(
+      position: 0,
+      duration: AppConstants.longAnimationDuration,
+      child: SlideAnimation(
+        verticalOffset: 50,
+        child: FadeInAnimation(
+          child: Column(
+            children: [
+              // App Logo
+              Container(
+                width: isSmallScreen ? width * 0.25 : width * 0.2,
+                height: isSmallScreen ? width * 0.25 : width * 0.2,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(AppConstants.primaryColorValue),
+                      const Color(AppConstants.primaryLightColorValue),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(AppConstants.primaryColorValue).withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.account_balance,
+                  size: isSmallScreen ? width * 0.12 : width * 0.1,
+                  color: Colors.white,
+                ),
+              ),
+              
+              SizedBox(height: isSmallScreen ? 20 : 24),
+              
+              // App Title
+              Text(
+                'KredAI',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? width * 0.08 : width * 0.07,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(AppConstants.primaryColorValue),
+                ),
+              ),
+              
+              SizedBox(height: isSmallScreen ? 8 : 12),
+              
+              // Subtitle
+              Text(
+                'AI-Powered Credit Assessment',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? width * 0.04 : width * 0.035,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              SizedBox(height: isSmallScreen ? 4 : 8),
+              
+              Text(
+                'For the Underbanked Population',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? width * 0.035 : width * 0.03,
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: height - (kToolbarHeight + MediaQuery.of(context).padding.top),
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      ),
+    );
+  }
+
+  Widget _buildFeatureCards(double width, bool isSmallScreen) {
+    final features = [
+      {
+        'icon': Icons.psychology,
+        'title': 'AI Analysis',
+        'description': 'Advanced ML algorithms for accurate risk assessment',
+        'color': const Color(AppConstants.primaryColorValue),
+      },
+      {
+        'icon': Icons.security,
+        'title': 'Secure & Private',
+        'description': 'Bank-grade security with data protection compliance',
+        'color': const Color(AppConstants.successColorValue),
+      },
+      {
+        'icon': Icons.insights,
+        'title': 'Explainable AI',
+        'description': 'Transparent decision-making with SHAP explanations',
+        'color': const Color(AppConstants.infoColorValue),
+      },
+    ];
+
+    return AnimationLimiter(
+      child: Column(
+        children: features.asMap().entries.map((entry) {
+          final index = entry.key;
+          final feature = entry.value;
+          
+          return AnimationConfiguration.staggeredList(
+            position: index,
+            duration: AppConstants.longAnimationDuration,
+            child: SlideAnimation(
+              verticalOffset: 30,
+              child: FadeInAnimation(
+                child: Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.only(bottom: isSmallScreen ? 16 : 20),
+                  padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
                     children: [
-                      // Welcome Card
-                      Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                      Container(
+                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                        decoration: BoxDecoration(
+                          color: (feature['color'] as Color).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(padding),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Hello! ${authState.user?.displayName ?? 'Friend'}',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(AppConstants.primaryColorValue),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: spacing * 0.5),
-                              Text(
-                                'Welcome to your Credit Assessment System',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
+                        child: Icon(
+                          feature['icon'] as IconData,
+                          size: isSmallScreen ? width * 0.06 : width * 0.05,
+                          color: feature['color'] as Color,
                         ),
                       ),
-
-                      SizedBox(height: spacing * 2),
-
-                      // App Logo/Icon
-                      Container(
-                        width: width * 0.3,
-                        height: width * 0.3,
-                        decoration: BoxDecoration(
-                          color: const Color(AppConstants.primaryColorValue),
-                          borderRadius: BorderRadius.circular(width * 0.15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(AppConstants.primaryColorValue).withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                      SizedBox(width: isSmallScreen ? 16 : 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              feature['title'] as String,
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? width * 0.04 : width * 0.035,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            SizedBox(height: isSmallScreen ? 4 : 6),
+                            Text(
+                              feature['description'] as String,
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? width * 0.035 : width * 0.03,
+                                color: Colors.grey[600],
+                                height: 1.4,
+                              ),
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.account_balance,
-                          size: 60,
-                          color: Colors.white,
-                        ),
                       ),
-
-                      SizedBox(height: spacing * 2),
-
-                      // App Title
-                      Text(
-                        'Credit Risk Assessment',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(AppConstants.primaryColorValue),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      SizedBox(height: spacing),
-
-                      // Subtitle
-                      Text(
-                        'For Underbanked People',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      SizedBox(height: spacing * 0.5),
-
-                      // Technology badges
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 8,
-                        children: [
-                          _buildTechChip('Federated Learning'),
-                          _buildTechChip('Explainable AI'),
-                          _buildTechChip('Alternative Data'),
-                        ],
-                      ),
-
-                      SizedBox(height: spacing * 2.5),
-
-                      // Backend Status
-                      _buildStatusCard(),
-
-                      SizedBox(height: spacing * 2),
-
-                      // Action Buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: buttonHeight,
-                              child: ElevatedButton.icon(
-                                onPressed: () => Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                                ),
-                                icon: const Icon(Icons.dashboard),
-                                label: const Text('Dashboard'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(AppConstants.primaryColorValue),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: spacing),
-                          Expanded(
-                            child: SizedBox(
-                              height: buttonHeight,
-                              child: ElevatedButton.icon(
-                                onPressed: _isHealthy 
-                                  ? () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const ApplicationFormScreen(),
-                                      ),
-                                    )
-                                  : null,
-                                icon: const Icon(Icons.add),
-                                label: const Text('New Application'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(AppConstants.secondaryColorValue),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: spacing),
-
-                      // Info text
-                      Text(
-                        'Powered by AI and Machine Learning\nSecure • Fast • Transparent',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      // Fill remaining space if any
-                      const Spacer(),
                     ],
                   ),
                 ),
               ),
             ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, AuthState authState, double width, bool isSmallScreen) {
+    return AnimationConfiguration.staggeredList(
+      position: 3,
+      duration: AppConstants.longAnimationDuration,
+      child: SlideAnimation(
+        verticalOffset: 30,
+        child: FadeInAnimation(
+          child: Column(
+            children: [
+              // Primary Action Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (authState.isAuthenticated) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserProfileFormScreen(),
+                        ),
+                      );
+                    } else {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DashboardScreen(),
+                        ),
+                      );
+                    }
+                  },
+                  icon: Icon(
+                    Icons.rocket_launch,
+                    size: isSmallScreen ? 20 : 24,
+                  ),
+                  label: Text(
+                    'Start Credit Assessment',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? width * 0.04 : width * 0.035,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(AppConstants.primaryColorValue),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      vertical: isSmallScreen ? 16 : 20,
+                      horizontal: isSmallScreen ? 24 : 32,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppConstants.buttonRadius),
+                    ),
+                    elevation: 4,
+                  ),
+                ),
+              ),
+              
+              SizedBox(height: isSmallScreen ? 16 : 20),
+              
+              // Secondary Action Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardScreen(),
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.dashboard,
+                    size: isSmallScreen ? 18 : 20,
+                  ),
+                  label: Text(
+                    'Go to Dashboard',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? width * 0.04 : width * 0.035,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(AppConstants.primaryColorValue),
+                    padding: EdgeInsets.symmetric(
+                      vertical: isSmallScreen ? 16 : 20,
+                      horizontal: isSmallScreen ? 24 : 32,
+                    ),
+                    side: const BorderSide(
+                      color: Color(AppConstants.primaryColorValue),
+                      width: 2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppConstants.buttonRadius),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTechChip(String label) {
-    return Chip(
-      label: Text(
-        label,
-        style: const TextStyle(fontSize: 12),
-      ),
-      backgroundColor: const Color(AppConstants.primaryColorValue).withOpacity(0.1),
-    );
-  }
-
-  Widget _buildStatusCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppConstants.defaultRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _isChecking 
-              ? Icons.sync 
-              : (_isHealthy ? Icons.check_circle : Icons.error),
-            color: _isChecking 
-              ? Colors.orange 
-              : (_isHealthy ? Colors.green : Colors.red),
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Backend Status',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _isChecking 
-                    ? 'Checking connection...' 
-                    : (_isHealthy ? 'Connected and Ready' : 'Backend Unavailable'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!_isHealthy && !_isChecking)
-            TextButton(
-              onPressed: () {
-                setState(() => _isChecking = true);
-                _checkBackendHealth();
-              },
-              child: const Text('Retry'),
-            ),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to log out?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ref.read(authProvider.notifier).signOut();
-              },
-              child: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.red),
+  Widget _buildFooter(double width, bool isSmallScreen) {
+    return AnimationConfiguration.staggeredList(
+      position: 4,
+      duration: AppConstants.longAnimationDuration,
+      child: SlideAnimation(
+        verticalOffset: 30,
+        child: FadeInAnimation(
+          child: Column(
+            children: [
+              Divider(
+                color: Colors.grey[300],
+                thickness: 1,
               ),
-            ),
-          ],
-        );
-      },
+              SizedBox(height: isSmallScreen ? 16 : 20),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.verified_user,
+                    size: isSmallScreen ? 16 : 18,
+                    color: const Color(AppConstants.successColorValue),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Secure • Private • Compliant',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? width * 0.03 : width * 0.025,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: isSmallScreen ? 8 : 12),
+              
+              Text(
+                '© 2025 KredAI. Empowering financial inclusion through AI.',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? width * 0.025 : width * 0.022,
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              SizedBox(height: isSmallScreen ? 4 : 8),
+              
+              Text(
+                'Version ${AppConstants.appVersion}',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? width * 0.025 : width * 0.022,
+                  color: Colors.grey[400],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -20,7 +20,7 @@ class DashboardCard extends StatelessWidget {
     required this.icon,
     required this.color,
     this.onTap,
-    this.animationIndex = 0,
+    this.animationIndex = 0, required bool isSmallScreen,
   });
 
   @override
